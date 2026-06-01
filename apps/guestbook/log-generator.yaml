@@ -1,20 +1,22 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: test-log-generator
-  namespace: argocd # Deploying it directly into your test tenant
+  name: mock-log-generator
+  namespace: default
   labels:
-    app: fake-auth-service
+    app: mock-log-generator
 spec:
   containers:
-  - name: logger
+  - name: log-producer
     image: busybox:1.36
-    # This script prints mock logs to standard output infinitely
+    command: ["/bin/sh", "-c"]
     args:
-    - /bin/sh
-    - -c
-    - >
+    - |
       while true; do
-        echo "INFO: $(date) - User login attempt successful from IP 192.168.1.$((RANDOM%255))";
-        sleep 2;
+        echo "{\"level\":\"info\", \"message\":\"User authentication successful\", \"service\":\"auth-service\", \"status\":200}"
+        sleep 1
+        echo "{\"level\":\"warn\", \"message\":\"Database connection pool reaching threshold\", \"service\":\"db-service\"}"
+        sleep 2
+        echo "{\"level\":\"error\", \"message\":\"Failed to process payment transaction\", \"service\":\"payment-gateway\", \"code\":500}"
+        sleep 3
       done
