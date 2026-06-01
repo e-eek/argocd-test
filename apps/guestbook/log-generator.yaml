@@ -1,29 +1,43 @@
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: test-log-generator
+  name: json-log-generator
   namespace: lgtm-test
   labels:
-    app: fake-auth-service
+    app: json-logger
 spec:
-  containers:
-  - name: logger
-    image: busybox:1.36
-    
-    # ⬇️ ADD THIS BLOCK TO FIX THE WARNING ⬇️
-    resources:
-      requests:
-        memory: "64Mi"   # Guaranteed 64 Megabytes of RAM
-        cpu: "50m"       # Guaranteed 5% of a CPU core
-      limits:
-        memory: "128Mi"  # Hard cap at 128 Megabytes of RAM
-        cpu: "100m"      # Hard cap at 10% of a CPU core
-
-    args:
-    - /bin/sh
-    - -c
-    - >
-      while true; do
-        echo "INFO: $(date) - User login attempt successful from IP 192.168.1.$((RANDOM%255))";
-        sleep 2;
-      done
+  replicas: 1
+  selector:
+    matchLabels:
+      app: json-logger
+  template:
+    metadata:
+      labels:
+        app: json-logger
+    spec:
+      containers:
+      - name: logger
+        image: busybox:1.36
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        # A script that spits out valid JSON log lines
+        args:
+        - /bin/sh
+        - -c
+        - >
+          while true; do
+            # Generate a normal successful request log
+            echo "{\"time\":\"$(date -u +%FT%TZ)\", \"level\":\"INFO\", \"method\":\"GET\", \"path\":\"/api/v1/users\", \"status\":200, \"duration_ms\":$((RANDOM%150+20))}";
+            sleep 1;
+            
+            # 10% chance to generate a random application error log
+            if [ $((RANDOM%10)) -eq 0 ]; then
+              echo "{\"time\":\"$(date -u +%FT%TZ)\", \"level\":\"ERROR\", \"method\":\"POST\", \"path\":\"/api/v1/payments\", \"status\":500, \"duration_ms\":$((RANDOM%800+400)), \"error\":\"Database connection pool exhausted\"}";
+            fi
+            sleep 1;
+          done
