@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lgtm-test-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # We point directly to Grafana's official Helm repository
+    repoURL: 'https://grafana.github.io/helm-charts'
+    chart: loki-stack
+    targetRevision: 2.10.2  # Uses a stable, lightweight local stack version
+    helm:
+      # These parameters override the heavy cluster defaults
+      parameters:
+        - name: grafana.enabled
+          value: "true"
+        - name: prometheus.enabled
+          value: "true"
+        - name: loki.persistence.enabled
+          value: "false" # Disables heavy persistent storage for testing
+        - name: promtail.enabled
+          value: "true"
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: lgtm-test # <-- Forces deployment into your test tenant
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-log-generator
+  namespace: lgtm-test
+  labels:
+    app: fake-auth-service
+spec:
+  containers:
+  - name: logger
+    image: busybox:1.36
+    
+    # ⬇️ ADD THIS BLOCK TO FIX THE WARNING ⬇️
+    resources:
+      requests:
+        memory: "64Mi"   # Guaranteed 64 Megabytes of RAM
+        cpu: "50m"       # Guaranteed 5% of a CPU core
+      limits:
+        memory: "128Mi"  # Hard cap at 128 Megabytes of RAM
+        cpu: "100m"      # Hard cap at 10% of a CPU core
+
+    args:
+    - /bin/sh
+    - -c
+    - >
+      while true; do
+        echo "INFO: $(date) - User login attempt successful from IP 192.168.1.$((RANDOM%255))";
+        sleep 2;
+      done
