@@ -1,0 +1,9 @@
+apiVersion: v1alpha1
+metadata:
+  name: signoz
+spec:
+  deployment:
+    # kustomize generates plain Kubernetes manifests with Kustomize overlays
+    flavor: kustomize
+    # kubernetes specifies Kubernetes as the target
+    mode: kubernetes
